@@ -86,23 +86,42 @@
                 console.log(data);
                 currentChartData = data;
 
+                console.log(data[0])
+
                 // Plotly chart
                 const timestamps = data.map(item => new Date(item.timestamp));
-                const values = data.map(item => parseFloat(item.value));
+                const valuesBezug = data.map(item => parseFloat(item.value_bezug));
+                const valuesGeben = data.map(item => parseFloat(item.value_geben));
 
-                const chartData = [{
-                    x: timestamps,
-                    y: values,
-                    type: 'scatter',
-                    mode: 'lines+markers',
-                    name: 'Value'
-                }];
+                const chartData = [
+                    {
+                        x: timestamps,
+                        y: valuesBezug,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: 'Value Bezug',
+                        marker: {
+                            color: 'red'
+                        }
+                    },
+                    {
+                        x: timestamps,
+                        y: valuesGeben,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: 'Value Geben',
+                        marker: {
+                            color: 'blue'
+                        }
+                    }
+                ];
 
                 const layout = {
                     title: `📈 ${currentChartType}`,
-                    xaxis: { title: 'Timestamp' },
-                    yaxis: { title: 'Value' },
-                    showlegend: true
+                    xaxis: { title: 'Timestamp'},
+                    // Make yaxis "value", fixedrange, but it adjusts to xaxis
+                    yaxis: { title: 'Value', fixedrange: true, range: [Math.min(...valuesBezug, ...valuesGeben), Math.max(...valuesBezug, ...valuesGeben)] },
+                    showlegend: true,
                 };
 
                 Plotly.newPlot('chart', chartData, layout);
@@ -113,4 +132,3 @@
     </script>
 </body>
 </html>
-
