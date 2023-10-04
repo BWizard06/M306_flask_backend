@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>&#128196; M306 Projekt</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+    <header class="bg-blue-500 text-white py-4">
+        <div class="max-w-2xl mx-auto text-center">
+            <h1 class="text-3xl font-bold">&#128196; M306 Projekt</h1>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <section class="bg-white p-4 rounded-lg shadow-md">
+            <h2 class="text-2xl mb-4">&#128640; Process XML Files</h2>
+            <form id="xmlForm" action="/sdat" method="GET" class="flex space-x-4">
+                <input type="text" name="verzeichnis" id="verzeichnis" required class="flex-grow border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300">
+                <button type="submit" id="processButton" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300">
+                    Process XML Files
+                </button>
+                <button id="toggleButton" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300">
+                    Verbrauchsdiagramm
+                </button>
+            </form>
+        </section>
+
+        <section class="mt-8 min-h-screen w-full">
+            <h2 class="text-2xl">&#128202; Results:</h2>
+            <div id="chart" class="bg-white min-h-screen p-4 mt-4 rounded-lg shadow-md"></div>
+        </section>
+    </main>
+
+    <footer class="fixed bottom-0 right-0 left-0 bg-blue-500 text-white text-center py-4">
+        &copy; 2023 M306 Projekt
+    </footer>
+<script>
+        // Variables to keep track of the current chart type and data
+        let currentChartType = 'Verbrauchsdiagramm';
+        let currentChartData = null;
+
+        // Function to toggle between chart types
+        function toggleChartType() {
+            const toggleButton = document.getElementById('toggleButton');
+
+            if (currentChartType === 'Verbrauchsdiagramm') {
+                currentChartType = 'Z&#228;hlerstandsdiagramm';
+            } else {
+                currentChartType = 'Verbrauchsdiagramm';
+            }
+
+            toggleButton.innerHTML = currentChartType;
+
+            // Clear the chart content
+            document.getElementById('chart').innerHTML = '';
+
+            // Clear the currentChartData
+            currentChartData = null;
+        }
+
+        document.getElementById('toggleButton').addEventListener('click', toggleChartType);
+
+        // Add an event listener to the form submission
+        const xmlForm = document.getElementById('xmlForm');
+        xmlForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            // Disable the submit button
+            const processButton = document.getElementById('processButton');
+            processButton.disabled = true;
+
+            const verzeichnis = document.getElementById('verzeichnis').value;
+
+            try {
+                const response = await fetch(`http://localhost:5000/${currentChartType === 'Verbrauchsdiagramm' ? 'sdat' : 'esl'}?verzeichnis=${verzeichnis}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                console.log(data);
+                currentChartData = data;
+
+                console.log(data[0]);
+
+                // Highcharts chart with zooming, tooltip, and other features
+                Highcharts.chart('chart', {
+                    chart: {
+                        zoomType: 'x', // Enable zooming on the x-axis
+                    },
+                    title: {
+                        text: `&#128200; ${currentChartType}`
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Timestamp'
+                        },
+                        labels: {
+                            formatter: function () {
+                                return Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.value);
+                            }
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Value'
+                        }
+                    },
+                    tooltip: {
+                        shared: true, // Show shared tooltip for multiple series
+                        xDateFormat: '%Y-%m-%d %H:%M:%S', // Format for timestamp in tooltip
+                    },
+                    series: [
+                        {
+                            name: 'Value Bezug',
+                            data: data.map(item => [new Date(item.timestamp).getTime(), parseFloat(item.value_bezug)]),
+                            color: 'red'
+                        },
+                        {
+                            name: 'Value Geben',
+                            data: data.map(item => [new Date(item.timestamp).getTime(), parseFloat(item.value_geben)]),
+                            color: 'blue'
+                        }
+                    ],
+                    plotOptions: {
+                        series: {
+                            marker: {
+                                enabled: true, // Show markers on data points
+                                radius: 3, // Marker size
+                            }
+                        }
+                    },
+                    annotations: [{
+                        labelOptions: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            shape: 'rect',
+                            padding: 5,
+                        },
+                        labels: [{
+                            point: {
+                                xAxis: 0,
+                                yAxis: 0,
+                                x: new Date().getTime(), // Add an annotation at the current time
+                                y: 0, // You can customize the y-coordinate as needed
+                            },
+                            text: 'Current Time',
+                        }]
+                    }],
+                    boost: {
+                        enabled: true, // Enable boost module for better performance
+                        useGPUTranslations: true, // Use GPU translations for smoother zooming
+                    },
+                    exporting: {
+                        enabled: true, // Enable exporting options
+                    },
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                // Enable the submit button after the fetch request completes or encounters an error
+                processButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
