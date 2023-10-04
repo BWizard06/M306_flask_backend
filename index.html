@@ -16,13 +16,20 @@
     <main style="max-width: 1000px; margin: 0 auto; padding: 32px;">
         <section style="background-color: #ffffff; padding: 16px; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);">
             <h2 style="font-size: 1.5rem; margin-bottom: 16px;">🚀 Process XML Files</h2>
-            <form action="/sdat" method="GET" style="display: flex; gap: 16px;">
+            <form id="xmlForm" action="/sdat" method="GET" style="display: flex; gap: 16px;">
                 <label for="verzeichnis" style="flex-shrink: 0;">Enter Directory Path:</label>
                 <input type="text" name="verzeichnis" id="verzeichnis" required style="flex-grow: 1; border: 1px solid #d1d5db; border-radius: 4px; padding: 8px;">
-                <button type="submit" style="background-color: #3b82f6; color: #ffffff; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;">
+                <button type="submit" id="processButton" style="background-color: #3b82f6; color: #ffffff; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;">
                     Process XML Files
                 </button>
             </form>
+        </section>
+
+        <section style="margin-top: 32px;">
+            <h2 style="font-size: 1.5rem;">🔁 Toggle Chart:</h2>
+            <button id="toggleButton" style="background-color: #3b82f6; color: #ffffff; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;">
+                Verbrauchsdiagramm
+            </button>
         </section>
 
         <section style="margin-top: 32px;">
@@ -37,20 +44,47 @@
 
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
     <script>
-        document.querySelector('form').addEventListener('submit', async function (event) {
+        // Variables to keep track of the current chart type and data
+        let currentChartType = 'Verbrauchsdiagramm';
+        let currentChartData = null;
+
+        // Function to toggle between chart types
+        function toggleChartType() {
+            const toggleButton = document.getElementById('toggleButton');
+
+            if (currentChartType === 'Verbrauchsdiagramm') {
+                currentChartType = 'Zählerstandsdiagramm';
+            } else {
+                currentChartType = 'Verbrauchsdiagramm';
+            }
+
+            toggleButton.textContent = currentChartType;
+
+            // Clear the chart content
+            document.getElementById('chart').innerHTML = '';
+
+            // Clear the currentChartData
+            currentChartData = null;
+        }
+
+        document.getElementById('toggleButton').addEventListener('click', toggleChartType);
+
+        // Add an event listener to the form submission
+        document.getElementById('xmlForm').addEventListener('submit', async function (event) {
             event.preventDefault();
 
             const verzeichnis = document.getElementById('verzeichnis').value;
 
             try {
-                const response = await fetch(`http://localhost:5000/sdat?verzeichnis=${verzeichnis}`, {
+                const response = await fetch(`http://localhost:5000/${currentChartType === 'Verbrauchsdiagramm' ? 'sdat' : 'esl'}?verzeichnis=${verzeichnis}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 });
                 const data = await response.json();
-                console.log(data)
+                console.log(data);
+                currentChartData = data;
 
                 // Plotly chart
                 const timestamps = data.map(item => new Date(item.timestamp));
@@ -65,7 +99,7 @@
                 }];
 
                 const layout = {
-                    title: '📈 Zoomable Time Series Plot',
+                    title: `📈 ${currentChartType}`,
                     xaxis: { title: 'Timestamp' },
                     yaxis: { title: 'Value' },
                     showlegend: true
