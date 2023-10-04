@@ -7,10 +7,12 @@ import os
 app = Flask(__name__)
 CORS(app)
 
+
 def xml_file_to_string(xml_file_path):
     tree = ET.parse(xml_file_path)
     root = tree.getroot()
     return ET.tostring(root, encoding='unicode')
+
 
 def verarbeite_xml(dateipfad):
     xml_data = xml_file_to_string(dateipfad)
@@ -42,6 +44,7 @@ def verarbeite_xml(dateipfad):
     
     return results
 
+
 def verarbeite_xml_verzeichnis(verzeichnis):
     gesamt_ergebnis_dict = {}
 
@@ -63,14 +66,17 @@ def verarbeite_xml_verzeichnis(verzeichnis):
 
     return list(gesamt_ergebnis_dict.values())
 
+
 @app.route('/')
 def hello_world():
-    return 'Hello, World!'
+    with open('index.html', 'r') as file:
+        return file.read()
 
 @app.route('/sdat')
 def sdat():
     verzeichnis = request.args.get('verzeichnis')
     return jsonify(verarbeite_xml_verzeichnis(verzeichnis))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

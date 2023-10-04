@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📄 XML Processor</title>
+    <link href="https://cdn.plot.ly/plotly-2.26.0.min.css" rel="stylesheet">
+</head>
+<body style="background-color: #f0f4f8; font-family: Arial, Helvetica, sans-serif;">
+    <header style="background-color: #3b82f6; color: #ffffff; padding: 16px;">
+        <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
+            <h1 style="font-size: 2rem; font-weight: bold;">📄 XML Processor</h1>
+        </div>
+    </header>
+
+    <main style="max-width: 1000px; margin: 0 auto; padding: 32px;">
+        <section style="background-color: #ffffff; padding: 16px; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);">
+            <h2 style="font-size: 1.5rem; margin-bottom: 16px;">🚀 Process XML Files</h2>
+            <form action="/sdat" method="GET" style="display: flex; gap: 16px;">
+                <label for="verzeichnis" style="flex-shrink: 0;">Enter Directory Path:</label>
+                <input type="text" name="verzeichnis" id="verzeichnis" required style="flex-grow: 1; border: 1px solid #d1d5db; border-radius: 4px; padding: 8px;">
+                <button type="submit" style="background-color: #3b82f6; color: #ffffff; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;">
+                    Process XML Files
+                </button>
+            </form>
+        </section>
+
+        <section style="margin-top: 32px;">
+            <h2 style="font-size: 1.5rem;">📊 Results:</h2>
+            <div id="chart" style="background-color: #ffffff; padding: 16px; margin-top: 16px; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);"></div>
+        </section>
+    </main>
+
+    <footer style="background-color: #3b82f6; color: #ffffff; text-align: center; padding: 16px;">
+        &copy; 2023 XML Processor
+    </footer>
+
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
+    <script>
+        document.querySelector('form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const verzeichnis = document.getElementById('verzeichnis').value;
+
+            try {
+                const response = await fetch(`http://localhost:5000/sdat?verzeichnis=${verzeichnis}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                console.log(data)
+
+                // Plotly chart
+                const timestamps = data.map(item => new Date(item.timestamp));
+                const values = data.map(item => parseFloat(item.value));
+
+                const chartData = [{
+                    x: timestamps,
+                    y: values,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Value'
+                }];
+
+                const layout = {
+                    title: '📈 Zoomable Time Series Plot',
+                    xaxis: { title: 'Timestamp' },
+                    yaxis: { title: 'Value' },
+                    showlegend: true
+                };
+
+                Plotly.newPlot('chart', chartData, layout);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
