@@ -1,60 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>XML Processor</title>
-    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📄 XML Processor</title>
+    <link href="https://cdn.plot.ly/plotly-2.26.0.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>XML Processor</h1>
-    <form action="/sdat" method="GET">
-        <label for="verzeichnis">Enter Directory Path:</label>
-        <input type="text" name="verzeichnis" id="verzeichnis" required>
-        <button type="submit">Process XML Files</button>
-    </form>
+<body class="bg-gray-100">
+    <header class="bg-blue-500 text-white py-4">
+        <div class="container mx-auto text-center">
+            <h1 class="text-4xl font-semibold">📄 XML Processor</h1>
+        </div>
+    </header>
 
-    <h2>Results:</h2>
-    <div id="chart"></div>
+    <main class="container mx-auto py-8 px-8">
+        <section class="bg-white p-8 rounded-lg shadow">
+            <h2 class="text-2xl mb-4">🚀 Process XML Files</h2>
+            <form action="/sdat" method="GET" class="flex space-x-4">
+                <label for="verzeichnis" class="flex-shrink-0">Enter Directory Path:</label>
+                <input type="text" name="verzeichnis" id="verzeichnis" required class="flex-grow border rounded-md py-2 px-3">
+                <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">Process XML Files</button>
+            </form>
+        </section>
 
-   <script>
-    document.querySelector('form').addEventListener('submit', async function (event) {
-        event.preventDefault();
+        <section class="mt-8">
+            <h2 class="text-2xl">📊 Results:</h2>
+            <div id="chart" class="bg-white p-8 mt-4 rounded-lg shadow"></div>
+        </section>
+    </main>
 
-        const verzeichnis = document.getElementById('verzeichnis').value;
+    <footer class="bg-blue-500 text-white text-center py-4">
+         2023 XML Processor
+    </footer>
 
-        try {
-            const response = await fetch(`http://localhost:5000/sdat?verzeichnis=${verzeichnis}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            const data = await response.json();
-            console.log(data)
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
+    <script>
+        document.querySelector('form').addEventListener('submit', async function (event) {
+            event.preventDefault();
 
-            // Plotly chart
-            const timestamps = data.map(item => new Date(item.timestamp));
-            const values = data.map(item => parseFloat(item.value));
+            const verzeichnis = document.getElementById('verzeichnis').value;
 
-            const chartData = [{
-                x: timestamps,
-                y: values,
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: 'Value'
-            }];
+            try {
+                const response = await fetch(`http://localhost:5000/sdat?verzeichnis=${verzeichnis}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                console.log(data)
 
-            const layout = {
-                title: 'Zoomable Time Series Plot',
-                xaxis: { title: 'Timestamp' },
-                yaxis: { title: 'Value' },
-                showlegend: true
-            };
+                // Plotly chart
+                const timestamps = data.map(item => new Date(item.timestamp));
+                const values = data.map(item => parseFloat(item.value));
 
-            Plotly.newPlot('chart', chartData, layout);
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    });
-</script>
+                const chartData = [{
+                    x: timestamps,
+                    y: values,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Value'
+                }];
+
+                const layout = {
+                    title: '📈 Zoomable Time Series Plot',
+                    xaxis: { title: 'Timestamp' },
+                    yaxis: { title: 'Value' },
+                    showlegend: true
+                };
+
+                Plotly.newPlot('chart', chartData, layout);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
 </body>
 </html>
