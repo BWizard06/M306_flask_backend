@@ -76,7 +76,7 @@
             const verzeichnis = document.getElementById('verzeichnis').value;
 
             try {
-                const response = await fetch(`http://localhost:5000/${currentChartType === 'Verbrauchsdiagramm' ? 'sdat' : 'esl'}?verzeichnis=${verzeichnis}`, {
+                const response = await fetch(`http://localhost:5000/${currentChartType === 'Verbrauchsdiagramm' ? 'sdat' : 'esl'}?sdat=${verzeichnis}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
