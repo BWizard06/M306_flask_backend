@@ -118,7 +118,7 @@
 
                 const layout = {
                     title: `📈 ${currentChartType}`,
-                    xaxis: { title: 'Timestamp'},
+                    xaxis: { title: 'Timestamp', rangeslider: {}},
                     // Make yaxis "value", fixedrange, but it adjusts to xaxis
                     yaxis: { title: 'Value', fixedrange: true, range: [Math.min(...valuesBezug, ...valuesGeben), Math.max(...valuesBezug, ...valuesGeben)] },
                     showlegend: true,
