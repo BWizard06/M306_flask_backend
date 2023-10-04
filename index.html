@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>XML Processor</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
+</head>
+<body>
+    <h1>XML Processor</h1>
+    <form action="/sdat" method="GET">
+        <label for="verzeichnis">Enter Directory Path:</label>
+        <input type="text" name="verzeichnis" id="verzeichnis" required>
+        <button type="submit">Process XML Files</button>
+    </form>
+
+    <h2>Results:</h2>
+    <div id="chart"></div>
+
+   <script>
+    document.querySelector('form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const verzeichnis = document.getElementById('verzeichnis').value;
+
+        try {
+            const response = await fetch(`http://localhost:5000/sdat?verzeichnis=${verzeichnis}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            console.log(data)
+
+            // Plotly chart
+            const timestamps = data.map(item => new Date(item.timestamp));
+            const values = data.map(item => parseFloat(item.value));
+
+            const chartData = [{
+                x: timestamps,
+                y: values,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Value'
+            }];
+
+            const layout = {
+                title: 'Zoomable Time Series Plot',
+                xaxis: { title: 'Timestamp' },
+                yaxis: { title: 'Value' },
+                showlegend: true
+            };
+
+            Plotly.newPlot('chart', chartData, layout);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+</script>
+</body>
+</html>
