@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="https://static.wikia.nocookie.net/deadcells_gamepedia_en/images/1/1d/Initiative_Mutation_Icon.png">
+    <link
+      rel="icon"
+      href="https://static.wikia.nocookie.net/deadcells_gamepedia_en/images/1/1d/Initiative_Mutation_Icon.png"
+    />
     <title>M306 Projekt</title>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
@@ -22,7 +25,7 @@
       </div>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-8">
+    <main class="max-w-4xl mx-auto px-4 py-8 pb-10">
       <section class="bg-white p-4 rounded-lg shadow-md">
         <h2 class="text-2xl mb-4">&#128640; Process XML Files</h2>
         <form id="xmlForm" class="space-y-4">
@@ -78,27 +81,27 @@
           </div>
         </form>
       </section>
-
-      <section class="mt-8">
+      <div
+        id="loading"
+        class="hidden flex justify-center items-center mx-auto w-1/2"
+      >
+        <img
+          src="https://cdn.pixabay.com/animation/2022/07/31/05/09/05-09-47-978_512.gif"
+          alt="Loading..."
+        />
+      </div>
+      <section class="mt-8 hidden" id="results-div">
         <h2 class="text-2xl">&#128202; Results</h2>
         <div
           id="chart"
-          class="bg-white flex p-4 mt-4 rounded-lg shadow-md overflow-x-auto"
-        >
-          <div
-            id="loading"
-            class="hidden flex justify-center items-center mx-auto w-1/2"
-          >
-            <img
-              src="https://cdn.pixabay.com/animation/2022/07/31/05/09/05-09-47-978_512.gif"
-              alt="Loading..."
-            />
-          </div>
-        </div>
+          class="flex p-4 mt-4 rounded-lg shadow-md overflow-x-auto"
+        ></div>
       </section>
     </main>
 
-    <footer class="fixed bottom-0 left-0 right-0 mt-10 bg-blue-500 text-white text-center py-4">
+    <footer
+      class="fixed bottom-0 left-0 right-0 bg-blue-500 text-white text-center py-4"
+    >
       &copy; 2023 M306 Projekt
     </footer>
     <script>
@@ -144,29 +147,40 @@
         const processButton = document.getElementById("processButton");
 
         let verzeichnis;
+        let zweitesVerzeichnis;
 
         if (currentChartType === "Verbrauchsdiagramm") {
           verzeichnis = document.getElementById("sdat").value;
         } else {
           verzeichnis = document.getElementById("esl").value;
+          zweitesVerzeichnis = document.getElementById("sdat").value;
         }
 
         const loadingElement = document.getElementById("loading");
         loadingElement.classList.remove("hidden");
+        let response;
         try {
-          const response = await fetch(
-            `http://localhost:5000/${
-              currentChartType === "Verbrauchsdiagramm" ? "sdat" : "esl"
-            }?${
-              currentChartType === "Verbrauchsdiagramm" ? "sdat" : "esl"
-            }=${verzeichnis}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          );
+          if (currentChartType === "Verbrauchsdiagramm") {
+            response = await fetch(
+              `http://localhost:5000/sdat?sdat=${verzeichnis}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          } else {
+            response = await fetch(
+              `http://localhost:5000/sdat-esl?esl=${verzeichnis}&sdat=${zweitesVerzeichnis}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          }
           const data = await response.json();
 
           console.log(data);
@@ -179,6 +193,10 @@
           } else {
             startDate = endDate = "No data available";
           }
+
+          // Show the results section
+          const resultsDiv = document.getElementById("results-div");
+          resultsDiv.classList.remove("hidden");
 
           // Highcharts chart with zooming, tooltip, and other features
           const chart = Highcharts.chart("chart", {
@@ -261,6 +279,11 @@
             exporting: {
               enabled: true, // Enable exporting options
             },
+            rangeSelector: {
+              verticalAlign: "bottom",
+              x: 0,
+              y: 0,
+            },
           });
 
           function ConvertToCSV(objArray) {
@@ -276,7 +299,9 @@
               ) {
                 let value = array[i].value_bezug - array[i].value_geben;
 
-                line += `"${Math.floor(new Date(array[i].timestamp) / 1000).getTime()}",${value}`;
+                line += `"${Math.floor(
+                  new Date(array[i].timestamp) / 1000
+                ).getTime()}",${value}`;
               }
 
               str += line + "\r\n";
