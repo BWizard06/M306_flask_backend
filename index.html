@@ -1,172 +1,405 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>&#128196; M306 Projekt</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="https://static.wikia.nocookie.net/deadcells_gamepedia_en/images/1/1d/Initiative_Mutation_Icon.png"
+    />
+    <title>M306 Projekt</title>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 font-sans min-h-screen">
+    <script src="https://code.highcharts.com/modules/exporting.src.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body class="bg-gray-100 font-sans min-h-screen">
     <header class="bg-blue-500 text-white py-4">
-        <div class="max-w-2xl mx-auto text-center">
-            <h1 class="text-3xl font-bold">&#128196; M306 Projekt</h1>
-        </div>
+      <div class="max-w-2xl mx-auto text-center">
+        <h1 class="text-3xl font-bold">&#128196; M306 Projekt</h1>
+      </div>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-8">
-        <section class="bg-white p-4 rounded-lg shadow-md">
-            <h2 class="text-2xl mb-4">&#128640; Process XML Files</h2>
-            <form id="xmlForm" action="/sdat" method="GET" class="flex space-x-4">
-                <input type="text" name="verzeichnis" id="verzeichnis" required class="flex-grow border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300">
-                <button type="submit" id="processButton" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300">
-                    Process XML Files
-                </button>
-                <button id="toggleButton" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300">
-                    Verbrauchsdiagramm
-                </button>
-            </form>
-        </section>
-
-        <section class="mt-8 min-h-screen w-full">
-            <h2 class="text-2xl">&#128202; Results:</h2>
-            <div id="chart" class="bg-white min-h-screen p-4 mt-4 rounded-lg shadow-md"></div>
-        </section>
+    <main class="max-w-4xl mx-auto px-4 py-8 pb-10">
+      <section class="bg-white p-4 rounded-lg shadow-md">
+        <h2 class="text-2xl mb-4">&#128640; Process XML Files</h2>
+        <form id="xmlForm" class="space-y-4">
+          <div class="flex flex-col space-y-2">
+            <label for="sdat">SDAT Input:</label>
+            <input
+              type="text"
+              name="sdat"
+              id="sdat"
+              class="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
+            />
+          </div>
+          <div class="flex flex-col space-y-2">
+            <label for="esl" id="esl-input" style="display: none"
+              >ESL Input:</label
+            >
+            <input
+              type="text"
+              name="esl"
+              id="esl"
+              class="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
+              style="display: none"
+            />
+          </div>
+          <div class="flex flex-col space-y-2">
+            <button
+              type="submit"
+              id="processButton"
+              class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300"
+            >
+              Process XML Files
+            </button>
+            <button
+              id="toggleButton"
+              class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300"
+            >
+              Verbrauchsdiagramm
+            </button>
+            <div class="block flex space-x-2 w-full">
+              <button
+                id="downloadButtonCsv"
+                class="block w-full bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300"
+              >
+                Export CSV
+              </button>
+              <button
+                id="downloadButtonJson"
+                class="block w-full bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300"
+              >
+                Export JSON
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+      <div
+        id="loading"
+        class="hidden flex justify-center items-center mx-auto w-1/2"
+      >
+        <img
+          src="https://cdn.pixabay.com/animation/2022/07/31/05/09/05-09-47-978_512.gif"
+          alt="Loading..."
+        />
+      </div>
+      <section class="mt-8 hidden" id="results-div">
+        <h2 class="text-2xl">&#128202; Results</h2>
+        <div
+          id="chart"
+          class="flex p-4 mt-4 rounded-lg shadow-md overflow-x-auto"
+        ></div>
+      </section>
     </main>
 
-    <footer class="fixed bottom-0 right-0 left-0 bg-blue-500 text-white text-center py-4">
-        &copy; 2023 M306 Projekt
+    <footer
+      class="fixed bottom-0 left-0 right-0 bg-blue-500 text-white text-center py-4"
+    >
+      &copy; 2023 M306 Projekt
     </footer>
-<script>
-        // Variables to keep track of the current chart type and data
-        let currentChartType = 'Verbrauchsdiagramm';
-        let currentChartData = null;
+    <script>
+      // Variables to keep track of the current chart type, data, and date range
+      let currentChartType = "Verbrauchsdiagramm";
+      let currentChartData = null;
+      let startDate = ""; // Store the start date
+      let endDate = ""; // Store the end date
 
-        // Function to toggle between chart types
-        function toggleChartType() {
-            const toggleButton = document.getElementById('toggleButton');
+      // Function to toggle between chart types
+      function toggleChartType() {
+        const toggleButton = document.getElementById("toggleButton");
 
-            if (currentChartType === 'Verbrauchsdiagramm') {
-                currentChartType = 'Z&#228;hlerstandsdiagramm';
-            } else {
-                currentChartType = 'Verbrauchsdiagramm';
-            }
-
-            toggleButton.innerHTML = currentChartType;
-
-            // Clear the chart content
-            document.getElementById('chart').innerHTML = '';
-
-            // Clear the currentChartData
-            currentChartData = null;
+        if (currentChartType === "Verbrauchsdiagramm") {
+          currentChartType = "Z&#228;hlerstandsdiagramm";
+          document.getElementById("esl").style.display = "block"; // Show the ESL input field
+          document.getElementById("esl-input").style.display = "block"; // Show the ESL input field
+        } else {
+          currentChartType = "Verbrauchsdiagramm";
+          document.getElementById("esl").style.display = "none"; // Hide the ESL input field
+          document.getElementById("esl-input").style.display = "none"; // Hide the ESL input field
         }
 
-        document.getElementById('toggleButton').addEventListener('click', toggleChartType);
+        toggleButton.innerHTML = currentChartType;
 
-        // Add an event listener to the form submission
-        const xmlForm = document.getElementById('xmlForm');
-        xmlForm.addEventListener('submit', async function (event) {
-            event.preventDefault();
+        // Clear the chart content
+        document.getElementById("chart").innerHTML = "";
 
-            // Disable the submit button
-            const processButton = document.getElementById('processButton');
-            processButton.disabled = true;
+        // Clear the currentChartData
+        currentChartData = null;
+      }
 
-            const verzeichnis = document.getElementById('verzeichnis').value;
+      document
+        .getElementById("toggleButton")
+        .addEventListener("click", toggleChartType);
 
-            try {
-                const response = await fetch(`http://localhost:5000/${currentChartType === 'Verbrauchsdiagramm' ? 'sdat' : 'esl'}?sdat=${verzeichnis}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                console.log(data);
-                currentChartData = data;
+      // Add an event listener to the form submission
+      const xmlForm = document.getElementById("xmlForm");
+      xmlForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
 
-                console.log(data[0]);
+        // Disable the submit button
+        const processButton = document.getElementById("processButton");
 
-                // Highcharts chart with zooming, tooltip, and other features
-                Highcharts.chart('chart', {
-                    chart: {
-                        zoomType: 'x', // Enable zooming on the x-axis
+        let verzeichnis;
+        let zweitesVerzeichnis;
+
+        if (currentChartType === "Verbrauchsdiagramm") {
+          verzeichnis = document.getElementById("sdat").value;
+        } else {
+          verzeichnis = document.getElementById("esl").value;
+          zweitesVerzeichnis = document.getElementById("sdat").value;
+        }
+
+        const loadingElement = document.getElementById("loading");
+        loadingElement.classList.remove("hidden");
+        let response;
+        try {
+          if (currentChartType === "Verbrauchsdiagramm") {
+            response = await fetch(
+              `http://localhost:5000/sdat?sdat=${verzeichnis}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          } else {
+            response = await fetch(
+              `http://localhost:5000/sdat-esl?esl=${verzeichnis}&sdat=${zweitesVerzeichnis}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          }
+          const data = await response.json();
+
+          console.log(data);
+          currentChartData = data;
+
+          // Extract the start and end dates from the data (replace with your logic)
+          if (data.length > 0) {
+            startDate = data[0].timestamp;
+            endDate = data[data.length - 1].timestamp;
+          } else {
+            startDate = endDate = "No data available";
+          }
+
+          // Show the results section
+          const resultsDiv = document.getElementById("results-div");
+          resultsDiv.classList.remove("hidden");
+
+          // Highcharts chart with zooming, tooltip, and other features
+          const chart = Highcharts.chart("chart", {
+            chart: {
+              zoomType: "x",
+            },
+            title: {
+              text: `&#128200; ${currentChartType}`,
+            },
+            xAxis: {
+              type: "datetime",
+              title: {
+                text: "Timestamp",
+              },
+              labels: {
+                formatter: function () {
+                  return Highcharts.dateFormat("%Y-%m-%d %H:%M:%S", this.value);
+                },
+              },
+            },
+            yAxis: {
+              title: {
+                text: "Value",
+              },
+            },
+            tooltip: {
+              shared: true, // Show shared tooltip for multiple series
+              xDateFormat: "%Y-%m-%d %H:%M:%S", // Format for timestamp in tooltip
+            },
+            series: [
+              {
+                name: "Value Bezug",
+                data: data.map((item) => [
+                  new Date(item.timestamp).getTime(),
+                  parseFloat(item.value_bezug),
+                ]),
+                color: "red",
+              },
+              {
+                name: "Value Geben",
+                data: data.map((item) => [
+                  new Date(item.timestamp).getTime(),
+                  parseFloat(item.value_geben),
+                ]),
+                color: "blue",
+              },
+            ],
+            plotOptions: {
+              series: {
+                marker: {
+                  enabled: true, // Show markers on data points
+                  radius: 3, // Marker size
+                },
+              },
+            },
+            annotations: [
+              {
+                labelOptions: {
+                  backgroundColor: "rgba(255, 255, 255, 0.8)",
+                  shape: "rect",
+                  padding: 5,
+                },
+                labels: [
+                  {
+                    point: {
+                      xAxis: 0,
+                      yAxis: 0,
+                      x: new Date().getTime(),
+                      y: 0,
                     },
-                    title: {
-                        text: `&#128200; ${currentChartType}`
-                    },
-                    xAxis: {
-                        type: 'datetime',
-                        title: {
-                            text: 'Timestamp'
-                        },
-                        labels: {
-                            formatter: function () {
-                                return Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.value);
-                            }
-                        }
-                    },
-                    yAxis: {
-                        title: {
-                            text: 'Value'
-                        }
-                    },
-                    tooltip: {
-                        shared: true, // Show shared tooltip for multiple series
-                        xDateFormat: '%Y-%m-%d %H:%M:%S', // Format for timestamp in tooltip
-                    },
-                    series: [
-                        {
-                            name: 'Value Bezug',
-                            data: data.map(item => [new Date(item.timestamp).getTime(), parseFloat(item.value_bezug)]),
-                            color: 'red'
-                        },
-                        {
-                            name: 'Value Geben',
-                            data: data.map(item => [new Date(item.timestamp).getTime(), parseFloat(item.value_geben)]),
-                            color: 'blue'
-                        }
-                    ],
-                    plotOptions: {
-                        series: {
-                            marker: {
-                                enabled: true, // Show markers on data points
-                                radius: 3, // Marker size
-                            }
-                        }
-                    },
-                    annotations: [{
-                        labelOptions: {
-                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                            shape: 'rect',
-                            padding: 5,
-                        },
-                        labels: [{
-                            point: {
-                                xAxis: 0,
-                                yAxis: 0,
-                                x: new Date().getTime(), // Add an annotation at the current time
-                                y: 0, // You can customize the y-coordinate as needed
-                            },
-                            text: 'Current Time',
-                        }]
-                    }],
-                    boost: {
-                        enabled: true, // Enable boost module for better performance
-                        useGPUTranslations: true, // Use GPU translations for smoother zooming
-                    },
-                    exporting: {
-                        enabled: true, // Enable exporting options
-                    },
-                });
-            } catch (error) {
-                console.error('Error:', error);
-            } finally {
-                // Enable the submit button after the fetch request completes or encounters an error
-                processButton.disabled = false;
+                    text: "Current Time",
+                  },
+                ],
+              },
+            ],
+            boost: {
+              enabled: true, // Enable boost module for better performance
+              useGPUTranslations: true, // Use GPU translations for smoother zooming
+            },
+            exporting: {
+              enabled: true, // Enable exporting options
+            },
+            rangeSelector: {
+              verticalAlign: "bottom",
+              x: 0,
+              y: 0,
+            },
+          });
+
+          function ConvertToCSV(objArray) {
+            let array =
+              typeof objArray != "object" ? JSON.parse(objArray) : objArray;
+            let str = "timestamp,value\r\n";
+
+            for (let i = 0; i < array.length; i++) {
+              let line = "";
+              if (
+                typeof array[i].value_bezug === "number" &&
+                typeof array[i].value_geben === "number"
+              ) {
+                let value = array[i].value_bezug - array[i].value_geben;
+
+                line += `"${Math.floor(
+                  new Date(array[i].timestamp) / 1000
+                ).getTime()}",${value}`;
+              }
+
+              str += line + "\r\n";
             }
-        });
+
+            return str;
+          }
+
+          function downloadJson() {
+            const json = JSON.stringify(currentChartData);
+            const exportedFilenmae = "export.json";
+
+            const blob = new Blob([json], { type: "text/json;charset=utf-8;" });
+            if (navigator.msSaveBlob) {
+              // IE 10+
+              navigator.msSaveBlob(blob, exportedFilenmae);
+            } else {
+              const link = document.createElement("a");
+              if (link.download !== undefined) {
+                // feature detection
+                // Browsers that support HTML5 download attribute
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", exportedFilenmae);
+                link.style.visibility = "hidden";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+            }
+          }
+
+          function generateCSVData(data) {
+            let csvData = "timestamp,value\n";
+
+            data.forEach((item) => {
+              const timestamp = item.timestamp;
+              const valueSum =
+                parseFloat(item.value_geben) + parseFloat(item.value_bezug);
+              csvData += `${timestamp},${valueSum}\n`;
+            });
+
+            return csvData;
+          }
+
+          // Function to download CSV
+          function downloadCSV() {
+            if (!currentChartData || currentChartData.length === 0) {
+              alert("No data available to export.");
+              return;
+            }
+
+            const csvData = generateCSVData(currentChartData);
+            const blob = new Blob([csvData], {
+              type: "text/csv;charset=utf-8;",
+            });
+            const exportedFileName = "export.csv";
+
+            if (navigator.msSaveBlob) {
+              // IE 10+
+              navigator.msSaveBlob(blob, exportedFileName);
+            } else {
+              const link = document.createElement("a");
+              if (link.download !== undefined) {
+                // Browsers that support HTML5 download attribute
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", exportedFileName);
+                link.style.visibility = "hidden";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+            }
+          }
+
+          // Add click event listener to the CSV export button
+          const downloadButtonCsv =
+            document.getElementById("downloadButtonCsv");
+          downloadButtonCsv.addEventListener("click", (e) => {
+            e.preventDefault();
+            downloadCSV();
+          });
+
+          const downloadButtonJson =
+            document.getElementById("downloadButtonJson");
+          downloadButtonJson.addEventListener("click", (e) => {
+            e.preventDefault();
+            downloadJson();
+          });
+        } catch (error) {
+          console.error("Error:", error);
+        } finally {
+          // Enable the submit button after the fetch request completes or encounters an error
+          processButton.removeAttribute("disabled");
+          loadingElement.classList.add("hidden");
+        }
+      });
     </script>
-</body>
+  </body>
 </html>
