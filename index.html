@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="referrer" content="no-referrer" />
-    <title>&#128196; M306 Projekt</title>
+    <link rel="icon" href="https://static.wikia.nocookie.net/deadcells_gamepedia_en/images/1/1d/Initiative_Mutation_Icon.png">
+    <title>M306 Projekt</title>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.src.js"></script>
@@ -36,7 +36,9 @@
             />
           </div>
           <div class="flex flex-col space-y-2">
-            <label for="esl">ESL Input:</label>
+            <label for="esl" id="esl-input" style="display: none"
+              >ESL Input:</label
+            >
             <input
               type="text"
               name="esl"
@@ -59,21 +61,29 @@
             >
               Verbrauchsdiagramm
             </button>
-            <button
-              id="downloadButton"
-              class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300"
-            >
-              Export CSV
-            </button>
+            <div class="block flex space-x-2 w-full">
+              <button
+                id="downloadButtonCsv"
+                class="block w-full bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300"
+              >
+                Export CSV
+              </button>
+              <button
+                id="downloadButtonJson"
+                class="block w-full bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300"
+              >
+                Export JSON
+              </button>
+            </div>
           </div>
         </form>
       </section>
 
-      <section class="mt-8 min-h-screen w-full">
-        <h2 class="text-2xl">&#128202; Results:</h2>
+      <section class="mt-8">
+        <h2 class="text-2xl">&#128202; Results</h2>
         <div
           id="chart"
-          class="bg-white flex min-h-screen p-4 mt-4 rounded-lg shadow-md"
+          class="bg-white flex p-4 mt-4 rounded-lg shadow-md overflow-x-auto"
         >
           <div
             id="loading"
@@ -88,7 +98,7 @@
       </section>
     </main>
 
-    <footer class="bg-blue-500 text-white text-center py-4">
+    <footer class="fixed bottom-0 left-0 right-0 mt-10 bg-blue-500 text-white text-center py-4">
       &copy; 2023 M306 Projekt
     </footer>
     <script>
@@ -105,9 +115,11 @@
         if (currentChartType === "Verbrauchsdiagramm") {
           currentChartType = "Z&#228;hlerstandsdiagramm";
           document.getElementById("esl").style.display = "block"; // Show the ESL input field
+          document.getElementById("esl-input").style.display = "block"; // Show the ESL input field
         } else {
           currentChartType = "Verbrauchsdiagramm";
           document.getElementById("esl").style.display = "none"; // Hide the ESL input field
+          document.getElementById("esl-input").style.display = "none"; // Hide the ESL input field
         }
 
         toggleButton.innerHTML = currentChartType;
@@ -162,7 +174,7 @@
 
           // Extract the start and end dates from the data (replace with your logic)
           if (data.length > 0) {
-            startDate = data[0].timestamp; // Assuming timestamp is in 'YYYY-MM-DD' format
+            startDate = data[0].timestamp;
             endDate = data[data.length - 1].timestamp;
           } else {
             startDate = endDate = "No data available";
@@ -171,7 +183,7 @@
           // Highcharts chart with zooming, tooltip, and other features
           const chart = Highcharts.chart("chart", {
             chart: {
-              zoomType: "x", // Enable zooming on the x-axis
+              zoomType: "x",
             },
             title: {
               text: `&#128200; ${currentChartType}`,
@@ -234,8 +246,8 @@
                     point: {
                       xAxis: 0,
                       yAxis: 0,
-                      x: new Date().getTime(), // Add an annotation at the current time
-                      y: 0, // You can customize the y-coordinate as needed
+                      x: new Date().getTime(),
+                      y: 0,
                     },
                     text: "Current Time",
                   },
@@ -254,14 +266,17 @@
           function ConvertToCSV(objArray) {
             let array =
               typeof objArray != "object" ? JSON.parse(objArray) : objArray;
-              let str = "";
+            let str = "timestamp,value\r\n";
 
             for (let i = 0; i < array.length; i++) {
               let line = "";
-              for (var index in array[i]) {
-                if (line != "") line += ",";
+              if (
+                typeof array[i].value_bezug === "number" &&
+                typeof array[i].value_geben === "number"
+              ) {
+                let value = array[i].value_bezug - array[i].value_geben;
 
-                line += array[i][index];
+                line += `"${Math.floor(new Date(array[i].timestamp) / 1000).getTime()}",${value}`;
               }
 
               str += line + "\r\n";
@@ -270,11 +285,11 @@
             return str;
           }
 
-          function downlaodCsv() {
-            const csv = ConvertToCSV(currentChartData);
-            const exportedFilenmae = "export.csv";
+          function downloadJson() {
+            const json = JSON.stringify(currentChartData);
+            const exportedFilenmae = "export.json";
 
-            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const blob = new Blob([json], { type: "text/json;charset=utf-8;" });
             if (navigator.msSaveBlob) {
               // IE 10+
               navigator.msSaveBlob(blob, exportedFilenmae);
@@ -294,10 +309,63 @@
             }
           }
 
-          const downloadButton = document.getElementById("downloadButton");
-          downloadButton.addEventListener("click", (e) => {
+          function generateCSVData(data) {
+            let csvData = "timestamp,value\n";
+
+            data.forEach((item) => {
+              const timestamp = item.timestamp;
+              const valueSum =
+                parseFloat(item.value_geben) + parseFloat(item.value_bezug);
+              csvData += `${timestamp},${valueSum}\n`;
+            });
+
+            return csvData;
+          }
+
+          // Function to download CSV
+          function downloadCSV() {
+            if (!currentChartData || currentChartData.length === 0) {
+              alert("No data available to export.");
+              return;
+            }
+
+            const csvData = generateCSVData(currentChartData);
+            const blob = new Blob([csvData], {
+              type: "text/csv;charset=utf-8;",
+            });
+            const exportedFileName = "export.csv";
+
+            if (navigator.msSaveBlob) {
+              // IE 10+
+              navigator.msSaveBlob(blob, exportedFileName);
+            } else {
+              const link = document.createElement("a");
+              if (link.download !== undefined) {
+                // Browsers that support HTML5 download attribute
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", exportedFileName);
+                link.style.visibility = "hidden";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+            }
+          }
+
+          // Add click event listener to the CSV export button
+          const downloadButtonCsv =
+            document.getElementById("downloadButtonCsv");
+          downloadButtonCsv.addEventListener("click", (e) => {
             e.preventDefault();
-            downlaodCsv();
+            downloadCSV();
+          });
+
+          const downloadButtonJson =
+            document.getElementById("downloadButtonJson");
+          downloadButtonJson.addEventListener("click", (e) => {
+            e.preventDefault();
+            downloadJson();
           });
         } catch (error) {
           console.error("Error:", error);
