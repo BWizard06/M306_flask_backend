@@ -182,6 +182,7 @@ from datetime import datetime, timedelta
 from flask_cors import CORS
 import os
 
+
 app = Flask(__name__)
 CORS(app)
 
@@ -311,6 +312,30 @@ def verarbeite_esl_xml(dateipfad):
     
     return results
 
+def kombiniere_esl_sdat(esl_daten, sdat_daten):
+    kombinierte_daten = []
+    
+    # Erstellen eines Dictionaries für leichteren Zugriff auf die ESL Monatsanfänge
+    esl_dict = {eintrag['timestamp'][:7]: eintrag for eintrag in esl_daten}
+    
+    for sdat_eintrag in sdat_daten:
+        monat_key = "{}-{}".format(sdat_eintrag["timestamp"][6:10], sdat_eintrag["timestamp"][3:5])
+        basis_eintrag = esl_dict.get(monat_key)
+        
+        # Wenn wir einen Basiswert für den aktuellen Monat haben, fügen wir den relativen Wert hinzu
+        if basis_eintrag:
+            kombinierte_daten.append({
+                "timestamp": datetime.strptime(sdat_eintrag["timestamp"], "%d.%m.%Y %H:%M").isoformat(),
+                "value_bezug": basis_eintrag["value_bezug"] + sdat_eintrag["value_bezug"],
+                "value_geben": basis_eintrag["value_geben"] + sdat_eintrag["value_geben"]
+            })
+            
+            # Aktualisiere den Basiswert für die nächsten 15 Minuten
+            basis_eintrag["value_bezug"] += sdat_eintrag["value_bezug"]
+            basis_eintrag["value_geben"] += sdat_eintrag["value_geben"]
+
+    return kombinierte_daten
+
 @app.route('/')
 def hello_world():
     with open('index.html', 'r') as file:
@@ -329,6 +354,18 @@ def esl():
 
     #return jsonify(verarbeite_xml_verzeichnis_sdat(sdat))
     return jsonify(verarbeite_esl_verzeichnis(esl))
+
+@app.route('/sdat-esl')
+def combined():
+    sdat_verzeichnis = request.args.get('sdat')
+    esl_verzeichnis = request.args.get('esl')
+
+    sdat_daten = verarbeite_xml_verzeichnis_sdat(sdat_verzeichnis)
+    esl_daten = verarbeite_esl_verzeichnis(esl_verzeichnis)
+
+    kombinierte_daten_liste = kombiniere_esl_sdat(esl_daten, sdat_daten)
+
+    return jsonify(kombinierte_daten_liste)
 
 
 if __name__ == '__main__':
