@@ -6,6 +6,9 @@
     <title>&#128196; M306 Projekt</title>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <!-- Include Flatpickr library -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 font-sans min-h-screen">
@@ -26,6 +29,15 @@
                 <button id="toggleButton" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300">
                     Verbrauchsdiagramm
                 </button>
+                <div id="dateRangeContainer" class="flex items-center space-x-4">
+                    <button id="leftButton" class="bg-gray-300 text-gray-700 px-4 py-2 rounded cursor-pointer hover:bg-gray-400 transition duration-300" disabled>
+                        &lt; <!-- Left Arrow -->
+                    </button>
+                    <div id="dateRangeDisplay" class="font-bold text-lg">Date Range</div>
+                    <button id="rightButton" class="bg-gray-300 text-gray-700 px-4 py-2 rounded cursor-pointer hover:bg-gray-400 transition duration-300" disabled>
+                        &gt; <!-- Right Arrow -->
+                    </button>
+                </div>
             </form>
         </section>
 
@@ -38,10 +50,12 @@
     <footer class="fixed bottom-0 right-0 left-0 bg-blue-500 text-white text-center py-4">
         &copy; 2023 M306 Projekt
     </footer>
-<script>
-        // Variables to keep track of the current chart type and data
+    <script>
+        // Variables to keep track of the current chart type, data, and date range
         let currentChartType = 'Verbrauchsdiagramm';
         let currentChartData = null;
+        let startDate = ''; // Store the start date
+        let endDate = '';   // Store the end date
 
         // Function to toggle between chart types
         function toggleChartType() {
@@ -86,7 +100,16 @@
                 console.log(data);
                 currentChartData = data;
 
-                console.log(data[0]);
+                // Extract the start and end dates from the data (replace with your logic)
+                if (data.length > 0) {
+                    startDate = data[0].timestamp;          // Assuming timestamp is in 'YYYY-MM-DD' format
+                    endDate = data[data.length - 1].timestamp;
+                } else {
+                    startDate = endDate = 'No data available';
+                }
+
+                // Display the date range
+                updateDateRangeDisplay();
 
                 // Highcharts chart with zooming, tooltip, and other features
                 Highcharts.chart('chart', {
@@ -160,6 +183,11 @@
                         enabled: true, // Enable exporting options
                     },
                 });
+
+                // Enable the left and right buttons for date navigation
+                document.getElementById('leftButton').disabled = false;
+                document.getElementById('rightButton').disabled = false;
+
             } catch (error) {
                 console.error('Error:', error);
             } finally {
@@ -167,6 +195,70 @@
                 processButton.disabled = false;
             }
         });
+
+        // Add an event listener to the left button for navigating one day back
+        const leftButton = document.getElementById('leftButton');
+        leftButton.addEventListener('click', function () {
+            if (!currentChartData || currentChartData.length === 0) {
+                alert('No data available');
+                return;
+            }
+
+            // Calculate the new start and end dates
+            const newStartDate = new Date(startDate);
+            newStartDate.setDate(newStartDate.getDate() - 1);
+
+            // Check if the new start date is still within the data range
+            if (newStartDate >= new Date(currentChartData[0].timestamp)) {
+                startDate = newStartDate.toISOString().slice(0, 10); // Format as 'YYYY-MM-DD'
+                endDate = newStartDate.toISOString().slice(0, 10);
+
+                // Update the date range display
+                updateDateRangeDisplay();
+
+                // Update the chart with the new date range
+                updateChartWithDateRange(startDate, endDate);
+            } else {
+                alert('No data available for the previous day');
+            }
+        });
+
+        // Add an event listener to the right button for navigating one day forward
+        const rightButton = document.getElementById('rightButton');
+        rightButton.addEventListener('click', function () {
+            if (!currentChartData || currentChartData.length === 0) {
+                alert('No data available');
+                return;
+            }
+
+            // Calculate the new start and end dates
+            const newEndDate = new Date(endDate);
+            newEndDate.setDate(newEndDate.getDate() + 1);
+
+            // Check if the new end date is still within the data range
+            if (newEndDate <= new Date(currentChartData[currentChartData.length - 1].timestamp)) {
+                startDate = newEndDate.toISOString().slice(0, 10); // Format as 'YYYY-MM-DD'
+                endDate = newEndDate.toISOString().slice(0, 10);
+
+                // Update the date range display
+                updateDateRangeDisplay();
+
+                // Update the chart with the new date range
+                updateChartWithDateRange(startDate, endDate);
+            } else {
+                alert('No data available for the next day');
+            }
+        });
+
+        // Function to update the date range display
+        function updateDateRangeDisplay() {
+            const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+            dateRangeDisplay.textContent = `${startDate} - ${endDate}`;
+        }
+
+        // Initial date range display
+        updateDateRangeDisplay();
     </script>
+
 </body>
 </html>
