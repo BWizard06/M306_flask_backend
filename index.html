@@ -30,9 +30,9 @@
         <h2 class="text-2xl mb-4">&#128640; Process XML Files</h2>
         <form id="xmlForm" class="space-y-4">
           <div class="flex flex-col space-y-2">
-            <label for="sdat">SDAT Input:</label>
+            <label for="sdat">SDAT ZIP-File:</label>
             <input
-              type="text"
+              type="file"
               name="sdat"
               id="sdat"
               class="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
@@ -40,10 +40,10 @@
           </div>
           <div class="flex flex-col space-y-2">
             <label for="esl" id="esl-input" style="display: none"
-              >ESL Input:</label
+              >ESL ZIP-File:</label
             >
             <input
-              type="text"
+              type="file"
               name="esl"
               id="esl"
               class="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
@@ -98,6 +98,8 @@
         ></div>
       </section>
     </main>
+    <script src="https://cdn.botpress.cloud/webchat/v0/inject.js"></script>
+    <script src="https://mediafiles.botpress.cloud/b321f000-a84d-409f-83b2-57df8df605f2/webchat/config.js" defer></script>
 
     <footer
       class="fixed bottom-0 left-0 right-0 bg-blue-500 text-white text-center py-4"
@@ -164,20 +166,22 @@
             response = await fetch(
               `http://localhost:5000/sdat?sdat=${verzeichnis}`,
               {
-                method: "GET",
+                method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                 },
+                files: [document.getElementById("sdat").files],
               }
             );
           } else {
             response = await fetch(
               `http://localhost:5000/sdat-esl?esl=${verzeichnis}&sdat=${zweitesVerzeichnis}`,
               {
-                method: "GET",
+                method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                 },
+                files: [document.getElementById("esl").files],
               }
             );
           }
@@ -247,7 +251,7 @@
             plotOptions: {
               series: {
                 marker: {
-                  enabled: true, // Show markers on data points
+                  enabled: false, // Show markers on data points
                   radius: 3, // Marker size
                 },
               },
