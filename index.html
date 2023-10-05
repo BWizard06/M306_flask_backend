@@ -3,15 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
     <title>&#128196; M306 Projekt</title>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.src.js"></script>
-<script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <link
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css"
       rel="stylesheet"
     />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   </head>
   <body class="bg-gray-100 font-sans min-h-screen">
     <header class="bg-blue-500 text-white py-4">
@@ -23,20 +25,27 @@
     <main class="max-w-4xl mx-auto px-4 py-8">
       <section class="bg-white p-4 rounded-lg shadow-md">
         <h2 class="text-2xl mb-4">&#128640; Process XML Files</h2>
-        <form id="xmlForm" class="flex space-x-4">
-          <input
-            type="text"
-            name="sdat"
-            id="sdat"
-            class="flex-grow border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
-          />
-          <input
-            type="text"
-            name="esl"
-            id="esl"
-            class="flex-grow border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
-          />
-          <div class="block">
+        <form id="xmlForm" class="space-y-4">
+          <div class="flex flex-col space-y-2">
+            <label for="sdat">SDAT Input:</label>
+            <input
+              type="text"
+              name="sdat"
+              id="sdat"
+              class="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
+            />
+          </div>
+          <div class="flex flex-col space-y-2">
+            <label for="esl">ESL Input:</label>
+            <input
+              type="text"
+              name="esl"
+              id="esl"
+              class="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
+              style="display: none"
+            />
+          </div>
+          <div class="flex flex-col space-y-2">
             <button
               type="submit"
               id="processButton"
@@ -50,34 +59,12 @@
             >
               Verbrauchsdiagramm
             </button>
-            <div id="dateRangeContainer" class="flex items-center space-x-4">
-              <button
-                id="leftButton"
-                class="bg-gray-300 text-gray-700 px-4 py-2 rounded cursor-pointer hover:bg-gray-400 transition duration-300"
-                disabled
-              >
-                &lt;
-                <!-- Left Arrow -->
-              </button>
-              <div id="dateRangeDisplay" class="font-bold text-lg">
-                Date Range
-              </div>
-              <button
-                id="rightButton"
-                class="bg-gray-300 text-gray-700 px-4 py-2 rounded cursor-pointer hover:bg-gray-400 transition duration-300"
-                disabled
-              >
-                &gt;
-                <!-- Right Arrow -->
-              </button>
-              <button
-                id="downloadButton"
-                class="bg-gray-300 text-gray-700 px-4 py-2 rounded cursor-pointer hover:bg-gray-400 transition duration-300"
-                disabled
-              >
-                Download CSV
-              </button>
-            </div>
+            <button
+              id="downloadButton"
+              class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300"
+            >
+              Export CSV
+            </button>
           </div>
         </form>
       </section>
@@ -86,8 +73,18 @@
         <h2 class="text-2xl">&#128202; Results:</h2>
         <div
           id="chart"
-          class="bg-white min-h-screen p-4 mt-4 rounded-lg shadow-md"
-        ></div>
+          class="bg-white flex min-h-screen p-4 mt-4 rounded-lg shadow-md"
+        >
+          <div
+            id="loading"
+            class="hidden flex justify-center items-center mx-auto w-1/2"
+          >
+            <img
+              src="https://cdn.pixabay.com/animation/2022/07/31/05/09/05-09-47-978_512.gif"
+              alt="Loading..."
+            />
+          </div>
+        </div>
       </section>
     </main>
 
@@ -107,8 +104,10 @@
 
         if (currentChartType === "Verbrauchsdiagramm") {
           currentChartType = "Z&#228;hlerstandsdiagramm";
+          document.getElementById("esl").style.display = "block"; // Show the ESL input field
         } else {
           currentChartType = "Verbrauchsdiagramm";
+          document.getElementById("esl").style.display = "none"; // Hide the ESL input field
         }
 
         toggleButton.innerHTML = currentChartType;
@@ -131,7 +130,6 @@
 
         // Disable the submit button
         const processButton = document.getElementById("processButton");
-        processButton.disabled = true;
 
         let verzeichnis;
 
@@ -141,6 +139,8 @@
           verzeichnis = document.getElementById("esl").value;
         }
 
+        const loadingElement = document.getElementById("loading");
+        loadingElement.classList.remove("hidden");
         try {
           const response = await fetch(
             `http://localhost:5000/${
@@ -157,14 +157,6 @@
           );
           const data = await response.json();
 
-          const downloadButton = document.getElementById("downloadButton");
-
-          // Remove disabled property
-          downloadButton.removeAttribute("disabled");
-
-          // Change tailwindcss classes to enable button
-          downloadButton.classList = "bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition duration-300";
-
           console.log(data);
           currentChartData = data;
 
@@ -175,9 +167,6 @@
           } else {
             startDate = endDate = "No data available";
           }
-
-          // Display the date range
-          updateDateRangeDisplay();
 
           // Highcharts chart with zooming, tooltip, and other features
           const chart = Highcharts.chart("chart", {
@@ -262,90 +251,62 @@
             },
           });
 
-          function downlaodCsv() {
-            chart.downloadCSV();
+          function ConvertToCSV(objArray) {
+            let array =
+              typeof objArray != "object" ? JSON.parse(objArray) : objArray;
+              let str = "";
+
+            for (let i = 0; i < array.length; i++) {
+              let line = "";
+              for (var index in array[i]) {
+                if (line != "") line += ",";
+
+                line += array[i][index];
+              }
+
+              str += line + "\r\n";
+            }
+
+            return str;
           }
 
-          // Enable the left and right buttons for date navigation
-          document.getElementById("leftButton").disabled = false;
-          document.getElementById("rightButton").disabled = false;
+          function downlaodCsv() {
+            const csv = ConvertToCSV(currentChartData);
+            const exportedFilenmae = "export.csv";
 
-          document
-            .getElementById("downloadButton")
-            .addEventListener("click", downlaodCsv);
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            if (navigator.msSaveBlob) {
+              // IE 10+
+              navigator.msSaveBlob(blob, exportedFilenmae);
+            } else {
+              const link = document.createElement("a");
+              if (link.download !== undefined) {
+                // feature detection
+                // Browsers that support HTML5 download attribute
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", exportedFilenmae);
+                link.style.visibility = "hidden";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+            }
+          }
+
+          const downloadButton = document.getElementById("downloadButton");
+          downloadButton.addEventListener("click", (e) => {
+            e.preventDefault();
+            downlaodCsv();
+          });
         } catch (error) {
           console.error("Error:", error);
         } finally {
           // Enable the submit button after the fetch request completes or encounters an error
-          processButton.disabled = false;
+          processButton.removeAttribute("disabled");
+          loadingElement.classList.add("hidden");
         }
       });
-
-      // Add an event listener to the left button for navigating one day back
-      const leftButton = document.getElementById("leftButton");
-      leftButton.addEventListener("click", function () {
-        if (!currentChartData || currentChartData.length === 0) {
-          alert("No data available");
-          return;
-        }
-
-        // Calculate the new start and end dates
-        const newStartDate = new Date(startDate);
-        newStartDate.setDate(newStartDate.getDate() - 1);
-
-        // Check if the new start date is still within the data range
-        if (newStartDate >= new Date(currentChartData[0].timestamp)) {
-          startDate = newStartDate.toISOString().slice(0, 10); // Format as 'YYYY-MM-DD'
-          endDate = newStartDate.toISOString().slice(0, 10);
-
-          // Update the date range display
-          updateDateRangeDisplay();
-
-          // Update the chart with the new date range
-          updateChartWithDateRange(startDate, endDate);
-        } else {
-          alert("No data available for the previous day");
-        }
-      });
-
-      // Add an event listener to the right button for navigating one day forward
-      const rightButton = document.getElementById("rightButton");
-      rightButton.addEventListener("click", function () {
-        if (!currentChartData || currentChartData.length === 0) {
-          alert("No data available");
-          return;
-        }
-
-        // Calculate the new start and end dates
-        const newEndDate = new Date(endDate);
-        newEndDate.setDate(newEndDate.getDate() + 1);
-
-        // Check if the new end date is still within the data range
-        if (
-          newEndDate <=
-          new Date(currentChartData[currentChartData.length - 1].timestamp)
-        ) {
-          startDate = newEndDate.toISOString().slice(0, 10); // Format as 'YYYY-MM-DD'
-          endDate = newEndDate.toISOString().slice(0, 10);
-
-          // Update the date range display
-          updateDateRangeDisplay();
-
-          // Update the chart with the new date range
-          updateChartWithDateRange(startDate, endDate);
-        } else {
-          alert("No data available for the next day");
-        }
-      });
-
-      // Function to update the date range display
-      function updateDateRangeDisplay() {
-        const dateRangeDisplay = document.getElementById("dateRangeDisplay");
-        dateRangeDisplay.textContent = `${startDate} - ${endDate}`;
-      }
-
-      // Initial date range display
-      updateDateRangeDisplay();
     </script>
   </body>
 </html>
