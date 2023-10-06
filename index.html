@@ -28,7 +28,7 @@
     <main class="max-w-4xl mx-auto px-4 py-8 pb-10">
       <section class="bg-white p-4 rounded-lg shadow-md">
         <h2 class="text-2xl mb-4">&#128640; Process XML Files</h2>
-        <form id="xmlForm" class="space-y-4">
+        <form id="xmlForm" class="space-y-4" enctype="multipart/form-data">
           <div class="flex flex-col space-y-2">
             <label for="sdat">SDAT ZIP-File:</label>
             <input
@@ -160,30 +160,38 @@
 
         const loadingElement = document.getElementById("loading");
         loadingElement.classList.remove("hidden");
+        let formdata_sdat = new FormData();
+        formdata_sdat.append("file", document.getElementById("sdat").files[0]);
+        let formdata_esl = new FormData();
+        formdata_esl.append("file", document.getElementById("esl").files[0]);
         let response;
         try {
           if (currentChartType === "Verbrauchsdiagramm") {
-            response = await fetch(
-              `http://localhost:5000/sdat?sdat=${verzeichnis}`,
+            await fetch(
+              `http://localhost:5000/upload_zip_sdat`,
               {
                 method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                files: [document.getElementById("sdat").files],
+                body: formdata_sdat,
               }
             );
+            response = await fetch(`http://localhost:5000/sdat`);
+  
           } else {
-            response = await fetch(
-              `http://localhost:5000/sdat-esl?esl=${verzeichnis}&sdat=${zweitesVerzeichnis}`,
+            await fetch(
+              `http://localhost:5000//upload_zip_esl`,
               {
                 method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                files: [document.getElementById("esl").files],
+                body: formdata_esl,
               }
             );
+            await fetch(
+              `http://localhost:5000/upload_zip_sdat`,
+              {
+                method: "POST",
+                body: formdata_sdat,
+              }
+            );
+            response = await fetch(`http://localhost:5000/sdat-esl`);
           }
           const data = await response.json();
 
@@ -238,7 +246,7 @@
                   new Date(item.timestamp).getTime(),
                   parseFloat(item.value_bezug),
                 ]),
-                color: "red",
+                color: "blue",
               },
               {
                 name: "Value Geben",
@@ -246,7 +254,7 @@
                   new Date(item.timestamp).getTime(),
                   parseFloat(item.value_geben),
                 ]),
-                color: "blue",
+                color: "red",
               },
             ],
             plotOptions: {
