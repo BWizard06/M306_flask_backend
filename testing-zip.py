@@ -2,7 +2,9 @@ from flask import Flask, request, jsonify
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from flask_cors import CORS
+import zipfile
 import os
+import shutil
 
 
 app = Flask(__name__, static_folder = 'static')
@@ -176,39 +178,84 @@ def kombiniere_esl_sdat(esl_daten, sdat_daten):
 
     return kombinierte_daten
 
+def handle_upload(file, target_folder):
+    """Hilfsfunktion, um die Datei-Upload-Logik zu kapseln."""
+    if file and file.filename.endswith('.zip'):
+        zip_path = os.path.join(".", file.filename)  # Speichern im aktuellen Verzeichnis
+        file.save(zip_path)
+        
+        # Entpacken der ZIP-Datei
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            # Zuerst alle XML-Dateien in das Zielverzeichnis extrahieren
+            for member in zip_ref.namelist():
+                if member.endswith('.xml'):
+                    zip_ref.extract(member, target_folder)
+                    
+                    
+        return "Dateien erfolgreich entpackt und gespeichert.", 200
+
+    return "Ungültige Datei.", 400
+
+def get_first_subfolder(main_folder):
+    """Ermittelt den ersten Unterordner eines gegebenen Hauptordners."""
+    try:
+        subfolders = [f.path for f in os.scandir(main_folder) if f.is_dir()]
+        return subfolders[0] if subfolders else None
+    except Exception as e:
+        print(f"Fehler beim Abrufen des Unterordners: {e}")
+        return None
+
 @app.route('/')
 def hello_world():
     with open('index.html', 'r') as file:
         return file.read()
 
+@app.route('/upload_zip_sdat', methods=['POST'])
+def upload_zip_sdat():
+    return handle_upload(request.files['file'], "./sdat_xml_dateien/")
+
+@app.route('/upload_zip_esl', methods=['POST'])
+def upload_zip_esl():
+    return handle_upload(request.files['file'], "./esl_xml_dateien/")
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    sdat_response = handle_upload(request.files['sdat'], "./sdat_xml_dateien/")
+    esl_response = handle_upload(request.files['esl'], "./esl_xml_dateien/")
+    
+    # Hier könnten Sie die Antworten kombinieren oder eine Auswahl treffen.
+    return jsonify({"sdat": sdat_response, "esl": esl_response})
+
 @app.route('/sdat')
 def sdat():
-    verzeichnis = request.args.get('sdat')
-     
-    return verarbeite_xml_verzeichnis_sdat(verzeichnis)
-
+    subfolder_path = get_first_subfolder('sdat_xml_dateien')
+    if not subfolder_path:
+        return "Fehler beim Abrufen der XML-Dateien.", 500
+    return verarbeite_xml_verzeichnis_sdat(subfolder_path)
 
 @app.route('/esl')
 def esl():
-    #sdat = request.args.get('sdat')
-    esl = request.args.get('esl')
-
-    #return jsonify(verarbeite_xml_verzeichnis_sdat(sdat))
-    return jsonify(verarbeite_esl_verzeichnis(esl))
+    subfolder_path = get_first_subfolder('esl_xml_dateien')
+    if not subfolder_path:
+        return jsonify({"error": "Fehler beim Abrufen der XML-Dateien."}), 500
+    print(subfolder_path)
+    return jsonify(verarbeite_esl_verzeichnis(subfolder_path))
 
 @app.route('/sdat-esl')
 def combined():
     sdat_verzeichnis = request.args.get('sdat')
     esl_verzeichnis = request.args.get('esl')
 
-    sdat_daten = verarbeite_xml_verzeichnis_sdat(sdat_verzeichnis)
-    esl_daten = verarbeite_esl_verzeichnis(esl_verzeichnis)
+    sdat_daten = verarbeite_xml_verzeichnis_sdat('sdat_xml_dateien')
+    esl_daten = verarbeite_esl_verzeichnis('esl_xml_dateien')
 
     kombinierte_daten_liste = kombiniere_esl_sdat(esl_daten, sdat_daten)
 
     return jsonify(kombinierte_daten_liste)
 
-
 if __name__ == '__main__':
+    for folder in ["./sdat_xml_dateien/", "./esl_xml_dateien/"]:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
     app.run(debug=True)
 

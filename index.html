@@ -185,6 +185,7 @@
 
           console.log(data);
           currentChartData = data;
+          console.log("this is chardata: ", currentChartData)
 
           // Extract the start and end dates from the data (replace with your logic)
           if (data.length > 0) {
@@ -219,7 +220,7 @@
             },
             yAxis: {
               title: {
-                text: "Value",
+                text: "kw/h",
               },
             },
             tooltip: {
@@ -247,7 +248,7 @@
             plotOptions: {
               series: {
                 marker: {
-                  enabled: true, // Show markers on data points
+                  enabled: false, // Show markers on data points
                   radius: 3, // Marker size
                 },
               },
@@ -335,13 +336,13 @@
           }
 
           function generateCSVData(data) {
-            let csvData = "timestamp,value\n";
+            let csvData = "timestamp, value\n";
 
             data.forEach((item) => {
-              const timestamp = item.timestamp;
+              const timestamp = Math.floor(new Date(item.timestamp).getTime() / 1000);
               const valueSum =
                 parseFloat(item.value_geben) + parseFloat(item.value_bezug);
-              csvData += `${timestamp},${valueSum}\n`;
+              csvData += `${timestamp}, ${valueSum}\n`;
             });
 
             return csvData;
