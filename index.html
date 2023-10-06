@@ -28,11 +28,11 @@
     <main class="max-w-4xl mx-auto px-4 py-8 pb-10">
       <section class="bg-white p-4 rounded-lg shadow-md">
         <h2 class="text-2xl mb-4">&#128640; Process XML Files</h2>
-        <form id="xmlForm" class="space-y-4">
+        <form id="xmlForm" class="space-y-4" enctype="multipart/form-data">
           <div class="flex flex-col space-y-2">
-            <label for="sdat">SDAT Input:</label>
+            <label for="sdat">SDAT ZIP-File:</label>
             <input
-              type="text"
+              type="file"
               name="sdat"
               id="sdat"
               class="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
@@ -40,10 +40,10 @@
           </div>
           <div class="flex flex-col space-y-2">
             <label for="esl" id="esl-input" style="display: none"
-              >ESL Input:</label
+              >ESL ZIP-File:</label
             >
             <input
-              type="text"
+              type="file"
               name="esl"
               id="esl"
               class="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition duration-300"
@@ -98,6 +98,8 @@
         ></div>
       </section>
     </main>
+    <script src="https://cdn.botpress.cloud/webchat/v0/inject.js"></script>
+    <script src="https://mediafiles.botpress.cloud/b321f000-a84d-409f-83b2-57df8df605f2/webchat/config.js" defer></script>
 
     <footer
       class="fixed bottom-0 left-0 right-0 bg-blue-500 text-white text-center py-4"
@@ -158,28 +160,38 @@
 
         const loadingElement = document.getElementById("loading");
         loadingElement.classList.remove("hidden");
+        let formdata_sdat = new FormData();
+        formdata_sdat.append("file", document.getElementById("sdat").files[0]);
+        let formdata_esl = new FormData();
+        formdata_esl.append("file", document.getElementById("esl").files[0]);
         let response;
         try {
           if (currentChartType === "Verbrauchsdiagramm") {
-            response = await fetch(
-              `http://localhost:5000/sdat?sdat=${verzeichnis}`,
+            await fetch(
+              `http://localhost:5000/upload_zip_sdat`,
               {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                },
+                method: "POST",
+                body: formdata_sdat,
               }
             );
+            response = await fetch(`http://localhost:5000/sdat`);
+  
           } else {
-            response = await fetch(
-              `http://localhost:5000/sdat-esl?esl=${verzeichnis}&sdat=${zweitesVerzeichnis}`,
+            await fetch(
+              `http://localhost:5000//upload_zip_esl`,
               {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                },
+                method: "POST",
+                body: formdata_esl,
               }
             );
+            await fetch(
+              `http://localhost:5000/upload_zip_sdat`,
+              {
+                method: "POST",
+                body: formdata_sdat,
+              }
+            );
+            response = await fetch(`http://localhost:5000/sdat-esl`);
           }
           const data = await response.json();
 
@@ -234,7 +246,7 @@
                   new Date(item.timestamp).getTime(),
                   parseFloat(item.value_bezug),
                 ]),
-                color: "red",
+                color: "blue",
               },
               {
                 name: "Value Geben",
@@ -242,7 +254,7 @@
                   new Date(item.timestamp).getTime(),
                   parseFloat(item.value_geben),
                 ]),
-                color: "blue",
+                color: "red",
               },
             ],
             plotOptions: {

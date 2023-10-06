@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, flash
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from flask_cors import CORS
 import os
+import zipfile
 
 
 app = Flask(__name__, static_folder = 'static')
@@ -42,8 +43,8 @@ def verarbeite_xml_sdat(dateipfad):
         if formatted_timestamp not in added_timestamps:
             results.append({
                 "timestamp": formatted_timestamp,
-                "value_bezug": volume_bezug,
-                "value_geben": volume_geben
+                "value_bezug": round(volume_bezug,3),
+                "value_geben": round(volume_geben,3)
             })
             added_timestamps.add(formatted_timestamp)
 
@@ -176,6 +177,33 @@ def kombiniere_esl_sdat(esl_daten, sdat_daten):
 
     return kombinierte_daten
 
+def handle_upload(file, target_folder):
+    """Hilfsfunktion, um die Datei-Upload-Logik zu kapseln."""
+    if file and file.filename.endswith('.zip'):
+        zip_path = os.path.join(".", file.filename)  # Speichern im aktuellen Verzeichnis
+        file.save(zip_path)
+        
+        # Entpacken der ZIP-Datei
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            # Zuerst alle XML-Dateien in das Zielverzeichnis extrahieren
+            for member in zip_ref.namelist():
+                if member.endswith('.xml'):
+                    zip_ref.extract(member, target_folder)
+                    
+                    
+        return "Dateien erfolgreich entpackt und gespeichert.", 200
+
+    return "Ungültige Datei.", 400
+
+def get_first_subfolder(main_folder):
+    """Ermittelt den ersten Unterordner eines gegebenen Hauptordners."""
+    try:
+        subfolders = [f.path for f in os.scandir(main_folder) if f.is_dir()]
+        return subfolders[0] if subfolders else None
+    except Exception as e:
+        print(f"Fehler beim Abrufen des Unterordners: {e}")
+        return None
+
 @app.route('/')
 def hello_world():
     with open('index.html', 'r') as file:
@@ -183,9 +211,21 @@ def hello_world():
 
 @app.route('/sdat')
 def sdat():
-    verzeichnis = request.args.get('sdat')
+    sub_folder = get_first_subfolder('sdat_xml_dateien')
      
-    return verarbeite_xml_verzeichnis_sdat(verzeichnis)
+    return verarbeite_xml_verzeichnis_sdat(sub_folder)
+
+@app.route('/upload_zip_sdat', methods=['POST'])
+def upload_zip_sdat():
+    if "file" not in request.files:
+        print('No file part')
+        return "Keine Datei hochgeladen.", 400
+        
+    return handle_upload(request.files['file'], "./sdat_xml_dateien/")
+
+@app.route('/upload_zip_esl', methods=['POST'])
+def upload_zip_esl():
+    return handle_upload(request.files['file'], "./esl_xml_dateien/")
 
 
 @app.route('/esl')
@@ -198,11 +238,11 @@ def esl():
 
 @app.route('/sdat-esl')
 def combined():
-    sdat_verzeichnis = request.args.get('sdat')
-    esl_verzeichnis = request.args.get('esl')
+    sub_folder_sdat = get_first_subfolder('sdat_xml_dateien')
+    sub_folder_esl = get_first_subfolder('esl_xml_dateien')
 
-    sdat_daten = verarbeite_xml_verzeichnis_sdat(sdat_verzeichnis)
-    esl_daten = verarbeite_esl_verzeichnis(esl_verzeichnis)
+    sdat_daten = verarbeite_xml_verzeichnis_sdat(sub_folder_sdat)
+    esl_daten = verarbeite_esl_verzeichnis(sub_folder_esl)
 
     kombinierte_daten_liste = kombiniere_esl_sdat(esl_daten, sdat_daten)
 
@@ -210,5 +250,8 @@ def combined():
 
 
 if __name__ == '__main__':
+    for folder in ["./sdat_xml_dateien/", "./esl_xml_dateien/"]:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
     app.run(debug=True)
 
