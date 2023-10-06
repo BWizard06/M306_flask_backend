@@ -299,28 +299,27 @@
             },
           });
 
-          function ConvertToCSV(objArray) {
-            let array =
-              typeof objArray != "object" ? JSON.parse(objArray) : objArray;
-            let str = "timestamp,value\r\n";
+          // Function to generate CSV data for "ID742" and "ID735"
+          function generateCSVDataForID742AndID735(data) {
+            let csvDataID742 = "timestamp,value\n";
+            let csvDataID735 = "timestamp,value\n";
 
-            for (let i = 0; i < array.length; i++) {
-              let line = "";
-              if (
-                typeof array[i].value_bezug === "number" &&
-                typeof array[i].value_geben === "number"
-              ) {
-                let value = array[i].value_bezug - array[i].value_geben;
+            data.forEach((item) => {
+              console.log(item)
+              const timestamp = Math.floor(new Date(item.timestamp).getTime() / 1000);
+              const valueID742 = parseFloat(item["value_bezug"]);
+              const valueID735 = parseFloat(item["value_geben"]);
 
-                line += `"${Math.floor(
-                  new Date(array[i].timestamp) / 1000
-                ).getTime()}",${value}`;
-              }
+              csvDataID742 += `${timestamp},${valueID742}\n`;
+              csvDataID735 += `${timestamp},${valueID735}\n`;
+            });
 
-              str += line + "\r\n";
-            }
-
-            return str;
+            return {
+              dataID742: csvDataID742,
+              filenameID742: "ID742.csv",
+              dataID735: csvDataID735,
+              filenameID735: "ID735.csv",
+            };
           }
 
           function downloadJson() {
@@ -346,43 +345,48 @@
               }
             }
           }
-
-          function generateCSVData(data) {
-            let csvData = "timestamp, value\n";
-
-            data.forEach((item) => {
-              const timestamp = Math.floor(new Date(item.timestamp).getTime() / 1000);
-              const valueSum =
-                parseFloat(item.value_geben) + parseFloat(item.value_bezug);
-              csvData += `${timestamp}, ${valueSum}\n`;
-            });
-
-            return csvData;
-          }
-
-          // Function to download CSV
-          function downloadCSV() {
+          
+          // Function to download CSV files for "ID742" and "ID735"
+          function downloadCSVForID742AndID735() {
             if (!currentChartData || currentChartData.length === 0) {
               alert("No data available to export.");
               return;
             }
 
-            const csvData = generateCSVData(currentChartData);
-            const blob = new Blob([csvData], {
+            // Generate CSV data for "ID742" and "ID735"
+            const {
+              dataID742,
+              filenameID742,
+              dataID735,
+              filenameID735,
+            } = generateCSVDataForID742AndID735(currentChartData);
+
+            // Create Blobs for both CSV files
+            const blobID742 = new Blob([dataID742], {
               type: "text/csv;charset=utf-8;",
             });
-            const exportedFileName = "export.csv";
 
+            const blobID735 = new Blob([dataID735], {
+              type: "text/csv;charset=utf-8;",
+            });
+
+            // Download the CSV files
+            downloadBlobAsFile(blobID742, filenameID742);
+            downloadBlobAsFile(blobID735, filenameID735);
+          }
+
+          // Function to download a Blob as a file
+          function downloadBlobAsFile(blob, filename) {
             if (navigator.msSaveBlob) {
               // IE 10+
-              navigator.msSaveBlob(blob, exportedFileName);
+              navigator.msSaveBlob(blob, filename);
             } else {
               const link = document.createElement("a");
               if (link.download !== undefined) {
                 // Browsers that support HTML5 download attribute
                 const url = URL.createObjectURL(blob);
                 link.setAttribute("href", url);
-                link.setAttribute("download", exportedFileName);
+                link.setAttribute("download", filename);
                 link.style.visibility = "hidden";
                 document.body.appendChild(link);
                 link.click();
@@ -391,12 +395,12 @@
             }
           }
 
-          // Add click event listener to the CSV export button
+          // Add click event listener to the combined CSV export button
           const downloadButtonCsv =
             document.getElementById("downloadButtonCsv");
           downloadButtonCsv.addEventListener("click", (e) => {
             e.preventDefault();
-            downloadCSV();
+            downloadCSVForID742AndID735();
           });
 
           const downloadButtonJson =
