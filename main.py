@@ -179,18 +179,35 @@ def kombiniere_esl_sdat(esl_daten, sdat_daten):
 
 def handle_upload(file, target_folder):
     """Hilfsfunktion, um die Datei-Upload-Logik zu kapseln."""
+
     if file and file.filename.endswith('.zip'):
         zip_path = os.path.join(".", file.filename)  # Speichern im aktuellen Verzeichnis
         file.save(zip_path)
-        
+
+        # Überprüfen, ob das Zielverzeichnis existiert, sonst erstellen
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
+
         # Entpacken der ZIP-Datei
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            # Zuerst alle XML-Dateien in das Zielverzeichnis extrahieren
-            for member in zip_ref.namelist():
-                if member.endswith('.xml'):
-                    zip_ref.extract(member, target_folder)
-                    
-                    
+        try:
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                # Zuerst alle XML-Dateien in das Zielverzeichnis extrahieren
+                for member in zip_ref.namelist():
+                    # Ignoriere versteckte Dateien
+                    if os.path.basename(member).startswith('.'):
+                        continue
+
+                    if member.endswith('.xml'):
+                        # Sicherstellen, dass die Datei im Zielverzeichnis landet
+                        final_path = os.path.join(target_folder, os.path.basename(member))
+                        if os.path.abspath(final_path).startswith(os.path.abspath(target_folder)):
+                            zip_ref.extract(member, target_folder)
+                        else:
+                            return "Ungültiger Pfad in der ZIP-Datei.", 400
+        finally:
+            # Löschen der temporären ZIP-Datei
+            os.remove(zip_path)
+
         return "Dateien erfolgreich entpackt und gespeichert.", 200
 
     return "Ungültige Datei.", 400
