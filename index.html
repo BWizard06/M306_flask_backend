@@ -8,10 +8,11 @@
       href="https://static.wikia.nocookie.net/deadcells_gamepedia_en/images/1/1d/Initiative_Mutation_Icon.png"
     />
     <title>M306 Projekt</title>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.src.js"></script>
-    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+        <script src="https://code.highcharts.com/stock/highstock.js"></script>
+        <script src="https://code.highcharts.com/stock/modules/data.js"></script>
+        <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+        <script src="https://code.highcharts.com/stock/modules/export-data.js"></script>
+        <script src="https://code.highcharts.com/stock/modules/accessibility.js"></script>
     <link
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css"
       rel="stylesheet"
@@ -212,92 +213,98 @@
           resultsDiv.classList.remove("hidden");
 
           // Highcharts chart with zooming, tooltip, and other features
-          const chart = Highcharts.chart("chart", {
-            chart: {
-              zoomType: "x",
-            },
-            title: {
-              text: `&#128200; ${currentChartType}`,
-            },
-            xAxis: {
-              type: "datetime",
-              title: {
-                text: "Timestamp",
-              },
-              labels: {
-                formatter: function () {
-                  return Highcharts.dateFormat("%Y-%m-%d %H:%M:%S", this.value);
-                },
-              },
-            },
-            yAxis: {
-              title: {
-                text: "kw/h",
-              },
-            },
-            tooltip: {
-              shared: true, // Show shared tooltip for multiple series
-              xDateFormat: "%Y-%m-%d %H:%M:%S", // Format for timestamp in tooltip
-            },
-            series: [
-              {
-                name: "Value Bezug",
-                data: data.map((item) => [
-                  new Date(item.timestamp).getTime(),
-                  parseFloat(item.value_bezug),
-                ]),
-                color: "blue",
-              },
-              {
-                name: "Value Geben",
-                data: data.map((item) => [
-                  new Date(item.timestamp).getTime(),
-                  parseFloat(item.value_geben),
-                ]),
-                color: "red",
-              },
-            ],
-            plotOptions: {
-              series: {
-                marker: {
-                  enabled: false, // Show markers on data points
-                  radius: 3, // Marker size
-                },
-              },
-            },
-            annotations: [
-              {
-                labelOptions: {
-                  backgroundColor: "rgba(255, 255, 255, 0.8)",
-                  shape: "rect",
-                  padding: 5,
-                },
-                labels: [
-                  {
-                    point: {
-                      xAxis: 0,
-                      yAxis: 0,
-                      x: new Date().getTime(),
-                      y: 0,
-                    },
-                    text: "Current Time",
-                  },
-                ],
-              },
-            ],
-            boost: {
-              enabled: true, // Enable boost module for better performance
-              useGPUTranslations: true, // Use GPU translations for smoother zooming
-            },
-            exporting: {
-              enabled: true, // Enable exporting options
-            },
-            rangeSelector: {
-              verticalAlign: "bottom",
-              x: 0,
-              y: 0,
-            },
-          });
+          const chart = Highcharts.stockChart("chart", {
+                        chart: {
+                            zoomType: "x",
+                        },
+                        title: {
+                            text: `&#128200; ${currentChartType}`,
+                        },
+                        xAxis: {
+                            type: "datetime",
+                            title: {
+                                text: "Timestamp",
+                            },
+                            labels: {
+                                formatter: function () {
+                                    return Highcharts.dateFormat(
+                                        "%Y-%m-%d %H:%M:%S",
+                                        this.value
+                                    );
+                                },
+                            },
+                        },
+                        yAxis: {
+                            title: {
+                                text: "kw/h",
+                            },
+                        },
+                        tooltip: {
+                            shared: true, // Show shared tooltip for multiple series
+                            xDateFormat: "%Y-%m-%d %H:%M:%S", // Format for timestamp in tooltip
+                        },
+                        series: [
+                            {
+                                name: "Value Bezug",
+                                data: data.map((item) => [
+                                    new Date(item.timestamp).getTime(),
+                                    parseFloat(item.value_bezug),
+                                ]),
+                                color: "blue",
+                            },
+                            {
+                                name: "Value Geben",
+                                data: data.map((item) => [
+                                    new Date(item.timestamp).getTime(),
+                                    parseFloat(item.value_geben),
+                                ]),
+                                color: "red",
+                            },
+                        ],
+                        plotOptions: {
+                            series: {
+                                marker: {
+                                    enabled: false, // Show markers on data points
+                                    radius: 3, // Marker size
+                                },
+                            },
+                        },
+                        annotations: [
+                            {
+                                labelOptions: {
+                                    backgroundColor: "rgba(255, 255, 255, 0.8)",
+                                    shape: "rect",
+                                    padding: 5,
+                                },
+                                labels: [
+                                    {
+                                        point: {
+                                            xAxis: 0,
+                                            yAxis: 0,
+                                            x: new Date().getTime(),
+                                            y: 0,
+                                        },
+                                        text: "Current Time",
+                                    },
+                                ],
+                            },
+                        ],
+                        boost: {
+                            enabled: true, // Enable boost module for better performance
+                            useGPUTranslations: true, // Use GPU translations for smoother zooming
+                        },
+                        exporting: {
+                            enabled: true, // Enable exporting options
+                        },
+                        rangeSelector: {
+                            verticalAlign: "bottom",
+                            x: 0,
+                            y: 0,
+                        },
+                        legend: {
+                            enabled: true,
+                        },
+                    });
 
           // Function to generate CSV data for "ID742" and "ID735"
           function generateCSVDataForID742AndID735(data) {
